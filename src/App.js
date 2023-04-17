@@ -5,6 +5,7 @@ import QuizForm from "./pages/QuizForm";
 import 'antd/dist/reset.css';
 import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
 import QuizParticipant from "./pages/QuizParticipant";
+import UpdateQuiz from "./pages/UpdateQuiz";
 
 
 function App() {
@@ -15,9 +16,9 @@ function App() {
         <div className="App">
           <Switch>
             <Route exact path="/" component={Dashboard} />
-            <Route exact path="/:isPartipant" component={Dashboard} />
+            <Route exact path="/particpant/:isPartipant" component={Dashboard} />
             <Route exact path="/add-quiz" component={QuizForm} />
-            <Route exact path="/update-quiz/:id" component={QuizForm} />
+            <Route exact path="/update-quiz/:id" component={UpdateQuiz} />
             <Route exact path="/quiz-particpant/:id" component={QuizParticipant} />
           </Switch>
         </div>

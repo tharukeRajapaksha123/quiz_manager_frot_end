@@ -1,7 +1,7 @@
 import styled from "styled-components";
 import React, { useState } from 'react';
 import { HomeFilled } from '@ant-design/icons';
-import { Button, Tooltip, Typography, Row, Col, Form, Select, DatePicker, TimePicker, Card } from 'antd';
+import { Button, Tooltip, Typography, Row, Col, Form, Select, DatePicker, TimePicker, Card, Divider } from 'antd';
 import SpacerBoxHorizontal from "../components/SpacerBoxHorizontal";
 import CustomFormItem from "../components/CustomFormItem";
 import CustomButton from "../components/Button"
@@ -180,7 +180,9 @@ function QuizForm() {
         <Form
           style={{ width: "80vw", margin: 0, padding: 0 }}
           initialValues={{
-            "module_code": moduleCode
+            module_code: moduleCode,
+            grade: studentGrade,
+
           }}
         >
           <>
@@ -188,7 +190,7 @@ function QuizForm() {
               <Col span={11}>
                 <Form.Item
                   initialValue={_id != null ?? moduleCode}
-                  name="module-code"
+                  name="module_code"
                   label="Module Code"
                   rules={[{ required: true, message: 'Please select module code!' }]}
                 >
@@ -285,11 +287,12 @@ function QuizForm() {
                   return <li key={index}>{
                     <p>
                       Question :   {question.getQuestion()}
-                      <br />
-                      Answers <br />
+                      <Divider />
+                      Answers
+                      <Divider />
                       {
-                        question.getAnswers().map((answer, index) => {
-                          return answer ?? <span key={index}> {`${index} : ${answer}`}</span>
+                        question.answers.map((answer, index) => {
+                          return <p key={index} >{index + 1} {answer} </p>
                         })
                       }
                     </p>

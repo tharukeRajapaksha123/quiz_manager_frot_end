@@ -34,12 +34,13 @@ const Header = styled.div`
 `
 
 const Body = styled.div`
-  width: 80vw;
+  width: 80%;
   background-color: white;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  min-height: 400px;
 `
 
 const BottomRow = styled.div`
@@ -96,14 +97,7 @@ const Dashboard = () => {
   const [query, setQuery] = useState("")
   const isPartipant = useParams().isPartipant;
 
-  const [isOpen, setIsOpen] = useState(false);
-
-  const handleOpenModal = () => setIsOpen(true);
-  const handleCloseModal = () => setIsOpen(false);
-  const handleConfirm = () => {
-    //onConfirm();
-    setIsOpen(false);
-  };
+  
 
   const onSearch = (e) => {
     setQuery(e.target.value);
@@ -206,7 +200,7 @@ const Dashboard = () => {
 
           }} text={"Add New Quiz"} color={"#F60707"} />
           <MyButton onClick={() => {
-            history.push("/true")
+            history.push("/particpant/true")
           }}
             text={"Participate to quiz"}
             color={"#121111"} />
