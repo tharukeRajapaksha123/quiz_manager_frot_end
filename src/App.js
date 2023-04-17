@@ -15,6 +15,7 @@ function App() {
         <div className="App">
           <Switch>
             <Route exact path="/" component={Dashboard} />
+            <Route exact path="/:isPartipant" component={Dashboard} />
             <Route exact path="/add-quiz" component={QuizForm} />
             <Route exact path="/update-quiz/:id" component={QuizForm} />
             <Route exact path="/quiz-particpant/:id" component={QuizParticipant} />
