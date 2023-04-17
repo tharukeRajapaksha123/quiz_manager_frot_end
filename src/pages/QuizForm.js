@@ -1,7 +1,7 @@
 import styled from "styled-components";
 import React, { useState } from 'react';
 import { HomeFilled } from '@ant-design/icons';
-import { Button, Tooltip, Typography, Input, Row, Col, Form, Select, DatePicker, TimePicker, Card, Alert } from 'antd';
+import { Button, Tooltip, Typography, Row, Col, Form, Select, DatePicker, TimePicker, Card } from 'antd';
 import SpacerBoxHorizontal from "../components/SpacerBoxHorizontal";
 import CustomFormItem from "../components/CustomFormItem";
 import CustomButton from "../components/Button"
@@ -9,7 +9,9 @@ import { useEffect } from "react";
 import constants from "../constants";
 import Question from "../models/question_model";
 import axios from "axios";
-import moment from 'moment';
+
+import Loader from "../components/Loader";
+import { useHistory, useParams } from "react-router-dom";
 const { Text, Title } = Typography;
 
 const { Option } = Select;
@@ -58,12 +60,14 @@ function QuizForm() {
   const [quizEndTime, setQuizEndTime] = useState('');
   const [numberOfMCQs, setNumberOfMCQs] = useState('');
   const [questions, setQuestions] = useState([]);
-  const [generateClicked, setGenaerateClicked] = useState(false)
   const [question, setQuestion] = useState();
   const [correctAnsweIndex, setCorrectAnswerIndex] = useState()
   const [answer, setAnswer] = useState()
   const [answers, setAnswers] = useState([])
-
+  const [shouldLoad, setShouldLoad] = useState(false)
+  const history = useHistory()
+  const params = useParams()
+  const _id = params.id ?? null;
   const config = {
     rules: [
       {
@@ -79,39 +83,78 @@ function QuizForm() {
     setModuleCodes(constants.moduleCodes)
     setTeachersIds(constants.teacherIds)
     setGrades(constants.grades)
-  }, [])
+
+    if (_id != null) {
+      axios.get(`${constants.baseUrl}quizzes/${_id}`).then((value) => {
+
+        setModuleCode(value.data["module_code"])
+        setStudentGrade(value.data["student_grade"])
+        setTeacherId(value.data["teacher_id"])
+        setNumberOfMCQs(value.data["number_of_mcqs"])
+        setQuizStartTime(value.data["start_time_of_quiz"])
+        setQuizEndTime(value.data["end_time_of_quiz"])
+        setQuizDate(value.data["date_of_quiz"])
+
+      }).catch(err => {
+        console.log(err)
+      })
+    }
+
+  }, [_id])
 
 
   const submit = async () => {
     await createQuiz();
   }
 
-  const createQuestion = async () => {
 
-  }
 
   const createQuiz = async () => {
+    setShouldLoad(!shouldLoad)
     const data = {
       "module_code": moduleCode,
       "student_grade": studentGrade,
       "teacher_id": teacherId,
       "date_of_quiz": quizDate,
-      "start_time_of_quiz": quizStartTime.format("HH:mm:ss"),
-      "end_time_of_quiz": quizEndTime.format("HH:mm:ss"),
+      "start_time_of_quiz": quizStartTime,
+      "end_time_of_quiz": quizEndTime,
       "number_of_mcqs": numberOfMCQs
     }
-    console.log(data)
-    axios.post(`${constants.baseUrl}quizes`, {
-      headers: {
-        'Content-Type': 'application/json'
-      },
+    //console.log(data)
+    await axios.post(`${constants.baseUrl}quizzes`,
       data
-    })
-      .then(response => console.log(response.data))
+    )
+      .then(async (response) => {
+        const id = response.data["_id"];
+        for (var q of questions) {
+          const d = {
+            question: q.getQuestion(),
+            answer_1: q.getAnswers()[0],
+            answer_2: q.getAnswers()[1],
+            answer_3: q.getAnswers()[2],
+            answer_4: q.getAnswers()[3],
+            correct_answer: q.getCorrectAnswerIndex(),
+            quiz_id: id
+          }
+          await axios.post(`${constants.baseUrl}questions`,
+            d
+          ).then(data => { }).catch(err => console.log(err))
+        }
+      })
       .catch(error => console.error(error))
-
+    setShouldLoad(false)
+    history.push("/")
   }
 
+  const updateQuiz = () => {
+    const data = {};
+    axios.patch(`${constants.baseUrl}quizzes/${_id}`, data).then((value) => {
+      console.log(value)
+      history.push("/");
+    }).catch(err => {
+      console.log(err)
+    })
+  }
 
 
   return (
@@ -136,18 +179,23 @@ function QuizForm() {
       <Container>
         <Form
           style={{ width: "80vw", margin: 0, padding: 0 }}
+          initialValues={{
+            "module_code": moduleCode
+          }}
         >
           <>
             <Row>
               <Col span={11}>
                 <Form.Item
-
+                  initialValue={_id != null ?? moduleCode}
                   name="module-code"
                   label="Module Code"
                   rules={[{ required: true, message: 'Please select module code!' }]}
                 >
-                  <Select placeholder="select module code"
+                  <Select
+                    placeholder="select module code"
                     onChange={(e) => { setModuleCode(e) }}
+                    value={moduleCode}
                   >
                     {
                       moduleCodes.map((code, index) => {
@@ -161,12 +209,14 @@ function QuizForm() {
               <SpacerBoxHorizontal />
               <Col span={11}>
                 <Form.Item
+                  initialValue={studentGrade}
                   name="grade"
                   label="Select Grade"
                   rules={[{ required: true, message: 'Please select grade!' }]}
                 >
                   <Select placeholder="select  grade"
                     onChange={(e) => { setStudentGrade(e) }}
+                    value={studentGrade}
                   >
                     {
                       grades.map((code, index) => {
@@ -210,18 +260,21 @@ function QuizForm() {
               </Col>
               <SpacerBoxHorizontal />
               <Col span={6}>
-                <Form.Item name="end-time" label="Quiz End Time" {...config}>
-                  <TimePicker onChange={(e) => { setQuizEndTime(e) }} />
+                <Form.Item
+                  initialValue={quizEndTime}
+                  name="end-time" label="Quiz End Time" {...config}>
+                  <TimePicker value={quizEndTime} onChange={(e) => { setQuizEndTime(e) }} />
                 </Form.Item>
               </Col>
               <SpacerBoxHorizontal />
 
               <CustomFormItem
-                onChange={(e) => { setNumberOfMCQs(e) }}
+                onChange={(e) => { setNumberOfMCQs(e.target.value) }}
                 required={true}
                 label={"Number of MCQ's"}
                 colspan={6}
                 message={"Number of mcqs are required!"}
+                value={numberOfMCQs}
               />
 
             </Row>
@@ -245,22 +298,22 @@ function QuizForm() {
               }</ol>
 
             </Card>
-            <Title level={3}>Add Question</Title>
+            {_id == null && <Title level={3}>Add Question</Title>}
 
-            <CustomFormItem
+            {_id == null && <CustomFormItem
               value={question}
               label={"Enter Question"}
               required={true}
               message={"Please enter an question"}
               onChange={(e) => { setQuestion(e.target.value) }}
               colspan={24}
-            />
+            />}
 
-            <ol>{answers.map((item, index) => (
+            {_id == null && <ol>{answers.map((item, index) => (
               <li key={index}>{item}</li>
-            ))}</ol>;
+            ))}</ol>}
 
-            {answers.length <= 3 && <Row>
+            {answers.length <= 3 && _id == null && <Row>
               <CustomFormItem
                 label={"Add Answer"}
                 required={true}
@@ -283,39 +336,42 @@ function QuizForm() {
                 Add Answer
               </Button>
             </Row>}
-            <CustomFormItem
+            {_id == null && <CustomFormItem
               label={"Correct Answer Index"}
               required={true}
               message={"Correct Answer Index"}
               colspan={8}
               onChange={(e) => { setCorrectAnswerIndex(e.target.value) }}
               value={correctAnsweIndex}
-            />
+            />}
 
-            <Row>
+            {_id == null && <Row>
               <Col span={24} >
                 <CustomButton
                   onClick={() => {
 
-                    if (question !== "" && answers.length > 0 && correctAnsweIndex !== "") {
-                      const q = new Question(
-                        question,
-                        answers[0] ?? "",
-                        answers[1] ?? "",
-                        answers[2] ?? "",
-                        answers[3] ?? "",
-                        parseInt(correctAnsweIndex)
-                      );
-                      const qs = questions;
-                      qs.push(q)
-                      setQuestions(qs)
-                      setQuestion("")
-                      setAnswers([])
-                      setAnswer("")
-                      setCorrectAnswerIndex("")
-                      console.log(questions.length)
-                    } else {
-
+                    if (_id == null) {
+                      if (question !== "" && answers.length > 0 && correctAnsweIndex !== "") {
+                        const q = new Question(
+                          question,
+                          answers[0] ?? "",
+                          answers[1] ?? "",
+                          answers[2] ?? "",
+                          answers[3] ?? "",
+                          parseInt(correctAnsweIndex)
+                        );
+                        const qs = questions;
+                        qs.push(q)
+                        setQuestions(qs)
+                        setQuestion("")
+                        setAnswers([])
+                        setAnswer("")
+                        setCorrectAnswerIndex("")
+                        console.log(questions.length)
+                      }
+                    }
+                    else {
+                      updateQuiz();
                     }
 
                   }}
@@ -325,22 +381,25 @@ function QuizForm() {
                   height={"35px"}
                 />
               </Col>
-            </Row>
+            </Row>}
             <div style={{ height: 16 }} />
-            <Row>
-              <Col span={24} >
-                <CustomButton
-                  onClick={() => {
-                    submit();
 
-                  }}
-                  text={"Submit"}
-                  color={"#13A43B"}
-                  width={"100%"}
-                  height={"35px"}
-                />
-              </Col>
-            </Row>
+            {
+              shouldLoad ? <Loader /> :
+                <Row>
+                  <Col span={24} >
+                    <CustomButton
+                      onClick={() => {
+                        submit();
+
+                      }}
+                      text={_id == null ? "Submit" : "Update"}
+                      color={"#13A43B"}
+                      width={"100%"}
+                      height={"35px"}
+                    />
+                  </Col>
+                </Row>}
 
           </>
         </Form>

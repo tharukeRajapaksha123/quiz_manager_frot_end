@@ -1,12 +1,13 @@
 import React from 'react'
 import styled from 'styled-components'
-import { HomeFilled,ClearOutlined } from '@ant-design/icons';
-import { Button, Tooltip, Typography, Input } from 'antd';
+import { HomeFilled, ClearOutlined } from '@ant-design/icons';
+import { Button, Tooltip, Typography, Input,Row } from 'antd';
 import MyButton from '../components/Button';
 import { useHistory } from "react-router-dom";
 import { useEffect } from 'react';
 import { useState } from 'react';
 import constants from '../constants';
+
 
 
 const { Text, Title } = Typography;
@@ -68,7 +69,9 @@ const BodySection = styled.div`
 
 const QuizCard = styled.div`
     width: 250px;
+    cursor : pointer;
     height: 80%;
+    margin: 16px 0;
     border-radius: 12px;
     background-color: #33C20F;
     align-items: center;
@@ -80,12 +83,13 @@ const Dashboard = () => {
   const history = useHistory();
   const [quizes, setQuizes] = useState([])
   const [constQuizes, setConstQuizes] = useState([])
-  const [query,setQuery] = useState("")
+  const [query, setQuery] = useState("")
+
   const onSearch = (e) => {
     setQuery(e.target.value);
-    
+
     let q = constQuizes.filter((quiz) => {
-      return quiz["student_grade"]===query || (quiz["module_code"].includes(query));
+      return quiz["student_grade"] === query || (quiz["module_code"].includes(query));
     })
     setQuizes(q)
   }
@@ -96,6 +100,8 @@ const Dashboard = () => {
       .then(response => response.json())
       .then(data => { setQuizes(data); setConstQuizes(data); })
       .catch(error => console.log(error));
+
+
 
   }, [])
 
@@ -117,33 +123,40 @@ const Dashboard = () => {
         <div style={{ flex: 1, display: "flex", justifyContent: "end" }}>
           <Search placeholder="input search text" value={query} onChange={(event) => { onSearch(event) }} style={{ width: 200 }} />
           <Tooltip title="clear" >
-            <Button 
-              onClick={()=>{setQuizes(constQuizes);setQuery("")}}
-            type="primary" shape="circle" icon={<ClearOutlined />} />
+            <Button
+              onClick={() => { setQuizes(constQuizes); setQuery("") }}
+              type="primary" shape="circle" icon={<ClearOutlined />} />
           </Tooltip>
         </div>
       </Header>
       <Body>
         <BodySection>
-          {
-            quizes.map((quiz) => {
-              return <QuizCard key={quiz["_id"]}>
-                <Title level={3}>
-                  {`${quiz["module_code"]} GRADE ${quiz["student_grade"]}`}
-                </Title>
-                <div style={{ display: "flex", width: "100%", justifyContent: "space-around", alignItems: "center" }}>
-                  <Button type="primary" onClick={() => { }}>
-                    Update
-                  </Button>
-                 
-                    <Button type="primary" danger onClick={(e)=>{}}>
+          <Row>
+            {
+              quizes.map((quiz) => {
+                return <QuizCard key={quiz["_id"]} onClick={()=>{history.push("/quiz-particpant/" + quiz._id)}}>
+                  <Title level={3}>
+                    {`${quiz["module_code"]} GRADE ${quiz["student_grade"]}`}
+                  </Title>
+                  <div style={{ display: "flex", width: "100%", justifyContent: "space-around", alignItems: "center" }}>
+                    <Button type="primary" onClick={() => { 
+                      history.push("/update-quiz/"+quiz._id)
+                    }}>
+                      Update
+                    </Button>
+
+                    <Button type="primary" danger onClick={(e) => { }}>
                       Delete
                     </Button>
-             
-                </div>
-              </QuizCard>
-            })
-          }
+
+                  </div>
+                </QuizCard>
+
+
+              })
+
+            }
+          </Row>
         </BodySection>
 
       </Body>
@@ -152,7 +165,7 @@ const Dashboard = () => {
         <MyButton onClick={() => {
           history.push("/add-quiz")
 
-         }} text={"Add New Quiz"} color={"#F60707"} />
+        }} text={"Add New Quiz"} color={"#F60707"} />
         <MyButton onClick={() => { }} text={"View Students Profile"} color={"#121111"} />
       </BottomRow>
     </Wrapper>
